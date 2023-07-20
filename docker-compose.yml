@@ -1,0 +1,62 @@
+version: "3.7"
+services:
+  app:
+    build:
+      args:
+        user: miracle
+        uid: 1000
+      context: docker/php-fpm/
+      dockerfile: Dockerfile
+    image: todo
+    container_name: todo-app
+    restart: unless-stopped
+    working_dir: /var/www/
+    volumes:
+      - ./:/var/www
+    networks:
+      - todo
+
+  db:
+    image: mysql
+    container_name: todo-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_USER: ${DB_USERNAME}
+      SERVICE_TAGS: dev
+      SERVICE_NAME: mysql
+    volumes:
+      - ./docker/mysql:/var/lib/mysql
+    networks:
+      - todo
+
+  nginx:
+    image: nginx:alpine
+    container_name: todo-nginx
+    restart: unless-stopped
+    ports:
+      - 8000:80
+    volumes:
+      - ./:/var/www
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d/
+    networks:
+      - todo
+
+  node:
+    image: node:alpine
+    container_name: todo-node
+    restart: unless-stopped
+    working_dir: /var/www/
+    tty: true
+    ports:
+      - 5173:5173
+    volumes:
+      - ./:/var/www
+    networks:
+      - todo
+        
+networks:
+  todo:
+    driver: bridge
